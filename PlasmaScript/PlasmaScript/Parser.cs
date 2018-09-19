@@ -52,7 +52,7 @@ namespace PlasmaScript
                 }
                 else if (item == "while")
                 {
-
+                    return WhileParse(line);
                 }
             }
             throw new Exception("工事中");
@@ -242,6 +242,26 @@ namespace PlasmaScript
                 }
             }
             throw new ArgumentException("変数定義が異常です");
+        }
+
+        private Line WhileParse(List<LexerToken> line)
+        {
+            var index = 1;
+            if(line[index] == ParenthesisStart)
+            {
+                ++index;
+                var expr = ExprParse(line, ref index);
+                if (line[index] == ParenthesisEnd)
+                {
+                    ++index;
+                    if (index != line.Count)
+                    {
+                        throw new ArgumentException("不要な文字列が後ろに含まれています");
+                    }
+                    return Line.NewWhileStart(expr);
+                }
+            }
+            throw new ArgumentException("while文が異常です");
         }
 
         private ParsingTypes.ValueType TypeParse(List<LexerToken> line, ref int index)
