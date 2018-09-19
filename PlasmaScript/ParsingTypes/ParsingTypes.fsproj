@@ -6,7 +6,7 @@
 
   <ItemGroup>
     <Compile Include="LexerTypes.fs" />
-    <Compile Include="Parser.fs" />
+    <Compile Include="ParserTypes.fs" />
   </ItemGroup>
 
 </Project>

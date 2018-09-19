@@ -4,12 +4,12 @@
         | Scope of Name * string
         | Atomic of string
     type Expr =
-        | BiOperator of string * List<Expr>
+        | BiOperator of string * Expr * Expr
         | TriOperator of Expr * Expr * Expr
         | MonoOperator of string * Expr
         | Function of Expr * List<Expr>
         | Indexer of Expr * Expr
-        | Member of Expr * Name
+        | Member of Expr * string
         | Value of Name
         | NumLiteral of int64
         | StringLiteral of string
@@ -18,6 +18,7 @@
     type ValueType =
         | Atomic of string
         | Template of string * List<ValueType>
+        | Void
     type Line =
         | FunctionDefine of string * List<string*ValueType> * ValueType
         | ValueDefine of List<string> * Expr

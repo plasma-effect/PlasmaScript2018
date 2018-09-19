@@ -29,14 +29,12 @@ namespace PlasmaScript
             this.charreg = new Regex(@"\'(?<value>.)\'");
             this.namereg = new Regex(@"(?<value>\w+)");
             this.twowordopregs = new Regex(@"(\+\+)|(\-\-)|(\:\:)|(\<\<)|(\>\>)|(\<\=)|(\>\=)|(\=\=)|(\!\=)|(\&\&)|(\|\|)");
-            this.onewordopregs = new Regex(@"\.|\,|\?|\+|\-|\~|\!|\*|\/|\%|\<|\>|\&|\||\^");
-            this.pararegs = new Regex(@"\[|\]|\(|\)");
+            this.onewordopregs = new Regex(@"\.|\,|\?|\+|\-|\~|\!|\*|\/|\%|\<|\>|\&|\||\^|\=");
+            this.pararegs = new Regex(@"\[|\]|\(|\)|\{|\}|\:");
 
             this.keywords = new string[]
             {
-                "for", "foreach", "while", "if", "end", "let", "function",
-                "int","int64_t","double","char","string","mod_t",
-                "array","dual_array","set","map","priority_queue","segtree","bit"
+                "for", "foreach", "while", "if", "end", "let", "function"
             };
         }
 
@@ -126,6 +124,12 @@ namespace PlasmaScript
                             return Next(BracketStart, match, line, index, end, ret);
                         case ']':
                             return Next(BracketEnd, match, line, index, end, ret);
+                        case '{':
+                            return Next(CurlyStart, match, line, index, end, ret);
+                        case '}':
+                            return Next(CurlyEnd, match, line, index, end, ret);
+                        case ':':
+                            return Next(TypeSig, match, line, index, end, ret);
                     }
                 }
             }
@@ -136,7 +140,7 @@ namespace PlasmaScript
             }
             else
             {
-                throw new ArgumentException($"{index} 不明なトークンが含まれています");
+                throw new ArgumentException($"{index}不明なトークンが含まれています");
             }
         }
 

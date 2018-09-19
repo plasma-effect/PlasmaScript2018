@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Console;
 
 namespace PlasmaScript
 {
@@ -13,17 +14,18 @@ namespace PlasmaScript
             try
             {
                 var lexer = new Lexer();
-                var ret = lexer.Analize(Console.ReadLine());
-                
-                foreach(var v in ret)
+                var parser = new Parser();
+                var ret = lexer.Analize(ReadLine());
+                foreach(var r in ret)
                 {
-                    Console.WriteLine(v);
-                    
+                    WriteLine(r);
                 }
+                var func = parser.Parsing(ret);
+                WriteLine(func);
             }
-            catch(ArgumentException exp)
+            catch(Exception exp)
             {
-                Console.WriteLine(exp);
+                WriteLine(exp);
             }
         }
     }
