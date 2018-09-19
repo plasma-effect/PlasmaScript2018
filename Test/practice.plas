@@ -1,0 +1,7 @@
+function Main()
+    let a = in::read{int}()
+    let [b, c] = in::read{int, int}()
+    let s = in::read{string}()
+    out::write_line(a + b + c)
+    out::write_line(s)
+end
