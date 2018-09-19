@@ -34,7 +34,7 @@ namespace PlasmaScript
 
             this.keywords = new string[]
             {
-                "for", "foreach", "while", "if", "end", "let", "function"
+                "for", "while", "if", "end", "let", "function"
             };
         }
 

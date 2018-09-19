@@ -48,11 +48,7 @@ namespace PlasmaScript
                 }
                 else if (item == "for")
                 {
-
-                }
-                else if (item == "foreach")
-                {
-
+                    return ForParse(line);
                 }
                 else if (item == "while")
                 {
@@ -182,6 +178,70 @@ namespace PlasmaScript
             {
                 throw new ArgumentException("構文が間違っています");
             }
+        }
+
+        private Line ForParse(List<LexerToken> line)
+        {
+            var index = 1;
+            if (line[index] == ParenthesisStart)
+            {
+                ++index;
+                var list = new List<string>();
+                if (line[index] == BracketStart)
+                {
+                    ++index;
+                    if (line[index] is LexerToken.Name n)
+                    {
+                        ++index;
+                        list.Add(n.Item);
+                    }
+                    else
+                    {
+                        throw new ArgumentException("変数が異常です");
+                    }
+                    while (true)
+                    {
+                        if (line[index] == BracketEnd)
+                        {
+                            ++index;
+                            break;
+                        }
+                        else if (line[index] is Operator op && op.Item == "," && line[index + 1] is LexerToken.Name name)
+                        {
+                            index += 2;
+                            list.Add(name.Item);
+                        }
+                        else
+                        {
+                            throw new ArgumentException("変数が異常です");
+                        }
+                    }
+                }
+                else if (line[index] is LexerToken.Name name)  
+                {
+                    ++index;
+                    list.Add(name.Item);
+                }
+                if (list.Count == 0)
+                {
+                    throw new ArgumentException("変数定義が異常です");
+                }
+                if (line[index] is Operator op2 && op2.Item == ",") 
+                {
+                    ++index;
+                    var ret = Line.NewForeachStart(list, ExprParse(line, ref index));
+                    if (line[index] == ParenthesisEnd) 
+                    {
+                        ++index;
+                        if (index != line.Count)
+                        {
+                            throw new ArgumentException("不要な文字列が後ろに含まれています");
+                        }
+                        return ret;
+                    }
+                }
+            }
+            throw new ArgumentException("変数定義が異常です");
         }
 
         private ParsingTypes.ValueType TypeParse(List<LexerToken> line, ref int index)
@@ -413,5 +473,6 @@ namespace PlasmaScript
             }
             throw new ArgumentException("異常な式です");
         }
+        
     }
 }

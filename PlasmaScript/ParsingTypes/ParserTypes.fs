@@ -23,7 +23,6 @@
         | FunctionDefine of string * List<string*ValueType> * ValueType
         | ValueDefine of List<string> * Expr
         | ValueAssign of string * Expr
-        | ForStart of List<string> * Expr * Expr * Expr
         | ForeachStart of List<string> * Expr
         | IfStart of Expr
         | WhileStart of Expr
