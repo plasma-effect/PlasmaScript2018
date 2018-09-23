@@ -1,0 +1,17 @@
+function add(this: ref{bit{@T}}, val: T, index: int)
+    ++index
+    while(index <= this.length)
+        this[index - 1] += val
+        index += index & -index
+    end
+end
+
+function sum(this: const_ref{bit{@T}}, index: int): @T
+    ++index
+    let ret = @T()
+    while(index != 0)
+        ret += this[index - 1]
+		index -= index & -index
+    end
+    return ret;
+end

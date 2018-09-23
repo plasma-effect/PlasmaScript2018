@@ -52,10 +52,41 @@ namespace PlasmaScript
                 }
                 else if (item == "while")
                 {
-                    return WhileParse(line);
+                    return WhileIfElifParse(line, Line.NewWhileStart);
+                }
+                else if (item == "if")
+                {
+                    return WhileIfElifParse(line, Line.NewIfStart);
+                }
+                else if (item == "elif")
+                {
+                    return WhileIfElifParse(line, Line.NewElifStart);
+                }
+                else if (item == "end")
+                {
+                    return Line.End;
+                }
+                else if (item == "else")
+                {
+                    return Line.Else;
+                }
+                else if (item == "break")
+                {
+                    return Line.Break;
                 }
             }
-            throw new Exception("工事中");
+            var index = 0;
+            var expr = ExprParse(line, ref index);
+            if (index == line.Count)
+            {
+                return Line.NewExpression(expr);
+            }
+            if (line[index] is AssignOperator aop)
+            {
+                ++index;
+                return Line.NewValueAssign(aop.Item, expr, ExprParse(line, ref index));
+            }
+            throw new Exception("適切でない文です");
         }
 
         private Line FunctionParse(List<LexerToken> line)
@@ -167,7 +198,7 @@ namespace PlasmaScript
                 {
                     throw new ArgumentException("変数定義が間違っています");
                 }
-                if(line[index] is Operator ope && ope.Item == "=")
+                if(line[index] is AssignOperator ope && ope.Item == "")
                 {
                     ++index;
                     return Line.NewValueDefine(val, ExprParse(line, ref index));
@@ -244,7 +275,7 @@ namespace PlasmaScript
             throw new ArgumentException("変数定義が異常です");
         }
 
-        private Line WhileParse(List<LexerToken> line)
+        private Line WhileIfElifParse(List<LexerToken> line, Func<Expr, Line> func)
         {
             var index = 1;
             if(line[index] == ParenthesisStart)
@@ -258,7 +289,7 @@ namespace PlasmaScript
                     {
                         throw new ArgumentException("不要な文字列が後ろに含まれています");
                     }
-                    return Line.NewWhileStart(expr);
+                    return func(expr);
                 }
             }
             throw new ArgumentException("while文が異常です");

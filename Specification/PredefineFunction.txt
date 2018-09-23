@@ -1,0 +1,8 @@
+in::read{@T0}()
+in::read{@T0, @T1}()
+in::read{@T0, @T1, @T2}()
+in::read{@T0, @T1, @T2, @T3}()
+in::write_line(@T0)
+in::write_line(@T0, @T1)
+in::write_line(@T0, @T1, @T2)
+in::write_line(@T0, @T1, @T2, @T3)

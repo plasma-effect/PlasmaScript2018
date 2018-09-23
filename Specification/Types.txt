@@ -1,0 +1,31 @@
+int
+    std::int64_t
+double
+    double
+char
+    char
+string
+    std::string
+mod_t
+    lib::modnum<value>(valueは--modで指定した値でデフォルトは1000000007)
+
+array{T}
+    std::vector<T>
+dual_array{T}
+    boost::multi_array<T, 2>
+sub_array{T}
+    boost::detail::multi_array::sub_array<T, 1>
+set{T}
+    std::set<T>
+map{Key, Value}
+    std::map<Key, Value>
+priority_queue{T}
+    std::priority_queue<T, std::vector<T>, std::greater<T>>
+
+[Ts...]
+    std::tuple<Ts...>
+
+segtree{T}
+    lib::segtree<T>
+bit{T}
+    lib::binary_indexed_tree{T}

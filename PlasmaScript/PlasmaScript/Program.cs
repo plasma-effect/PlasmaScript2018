@@ -11,21 +11,18 @@ namespace PlasmaScript
     {
         static void Main(string[] args)
         {
-            try
+            var str = @"int sum(array<@T> ar)
+{
+    @T ret = 0;
+    for(auto a: ar)
+    {
+        ret = a;
+    }
+    return ret;
+}";
+            using (var stream = new Utility.ReplaceReader("@T", "int", new System.IO.StringReader(str)))
             {
-                var lexer = new Lexer();
-                var parser = new Parser();
-                var ret = lexer.Analize(ReadLine());
-                foreach(var r in ret)
-                {
-                    WriteLine(r);
-                }
-                var func = parser.Parsing(ret);
-                WriteLine(func);
-            }
-            catch(Exception exp)
-            {
-                WriteLine(exp);
+                WriteLine(stream.ReadToEnd());
             }
         }
     }

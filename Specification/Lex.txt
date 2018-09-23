@@ -1,0 +1,17 @@
+Double
+    123.456
+Number
+    123
+String
+    "test"
+Keyward
+    let if for foreach while end
+Bracket
+    [ ]
+Parenthesis
+    ( )
+Name
+    names
+Operator
+    ++ -- :: << >> <= >= == != && ||
+    . , ? + -  ~ ! * / % < > & | ^

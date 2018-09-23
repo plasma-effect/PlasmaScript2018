@@ -15,12 +15,11 @@ namespace PlasmaScript
         Regex stringreg;
         Regex charreg;
         Regex namereg;
+        Regex assignreg;
         Regex twowordopregs;
         Regex onewordopregs;
         Regex pararegs;
-
-        string[] keywords;
-
+        
         public Lexer()
         {
             this.doublereg = new Regex(@"(?<value>\d+)\.(?<value2>\d*)");
@@ -28,14 +27,10 @@ namespace PlasmaScript
             this.stringreg = new Regex(@"""(?<value>([^""\\]|\\.)*)""");
             this.charreg = new Regex(@"\'(?<value>.)\'");
             this.namereg = new Regex(@"(?<value>\w+)");
+            this.assignreg = new Regex(@"(\=)|(\+\=)|(\-\=)|(\*\=)|(\/\=)|(\%\=)|(\<\<\=)|(\>\>\=)|(\&\=)|(\|\=)|(\^\=)");
             this.twowordopregs = new Regex(@"(\+\+)|(\-\-)|(\:\:)|(\<\<)|(\>\>)|(\<\=)|(\>\=)|(\=\=)|(\!\=)|(\&\&)|(\|\|)");
-            this.onewordopregs = new Regex(@"\.|\,|\?|\+|\-|\~|\!|\*|\/|\%|\<|\>|\&|\||\^|\=");
+            this.onewordopregs = new Regex(@"\.|\,|\?|\+|\-|\~|\!|\*|\/|\%|\<|\>|\&|\||\^");
             this.pararegs = new Regex(@"\[|\]|\(|\)|\{|\}|\:");
-
-            this.keywords = new string[]
-            {
-                "for", "while", "if", "end", "let", "function"
-            };
         }
 
         public List<ParsingTypes.LexerToken> Analize(string line, int index = 0, int end = -1, List<ParsingTypes.LexerToken> ret = null)
@@ -82,18 +77,10 @@ namespace PlasmaScript
                 }
             }
             {
-                var match = this.namereg.Match(line, index, end - index);
+                var match = this.assignreg.Match(line, index, end - index);
                 if (match.Success)
                 {
-                    var name = match.Groups["value"].Value;
-                    if (this.keywords.Contains(name))
-                    {
-                        return Next(NewKeyword(name), match, line, index, end, ret);
-                    }
-                    else
-                    {
-                        return Next(NewName(name), match, line, index, end, ret);
-                    }
+                    return Next(NewAssignOperator(match.Value.Substring(0, match.Value.Length - 1)), match, line, index, end, ret);
                 }
             }
             {

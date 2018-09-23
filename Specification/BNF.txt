@@ -1,0 +1,9 @@
+<value type>    = <literal>
+                | ref{<value_type>}
+                | const{<value_type>}
+                | const_ref{<value_type>}
+                | <name>{*<value_type>}
+                | [*<value_type>]
+
+<name>  = <atomic>
+        | <name>::<atomic>

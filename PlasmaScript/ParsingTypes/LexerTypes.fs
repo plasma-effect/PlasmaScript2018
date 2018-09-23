@@ -11,6 +11,6 @@ namespace ParsingTypes
         | CurlyStart //{
         | CurlyEnd //}
         | TypeSig //:
-        | Keyword of string //キーワード
         | Name of string //名前
         | Operator of string //演算子
+        | AssignOperator of string//代入演算子

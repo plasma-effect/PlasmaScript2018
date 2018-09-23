@@ -1,0 +1,57 @@
+group 0
+    (<expression>)
+group 1
+    <name>::<name>
+group 2
+    <group 1>.<name>
+    <group 1>[<expression>]
+    <group 1>([<expression> *(, <expression>)])
+    ?(<expression>, <expression>, <expression>)
+group 3
+    ++<group 2>
+    --<group 2>
+    ~<group 2>
+    !<group 2>
+    -<group 2>
+    +<group 2>
+group 4
+    <group 3>*<group 4>
+    <group 3>/<group 4>
+    <group 3>%<group 4>
+group 5
+    <group 4>+<group 5>
+    <group 4>-<group 5>
+group 6
+    <group 5> << <group 6>
+    <group 5> >> <group 6>
+group 7
+    <group 6> <  <group 7>
+    <group 6> <= <group 7>
+    <group 6> >  <group 7>
+    <group 6> >= <group 7>
+group 8
+    <group 7> == <group 8>
+    <group 7> != <group 8>
+group 9
+    <group 8> & <group 9>
+group 10
+    <group 9> ^ <group 10>
+group 11
+    <group 10> | <group 11>
+group 12
+    <group 11> && <group 12>
+group 13
+    <group 12> || <group 13>
+group 14
+    <group 13> = <group 13>
+    <group 13> *= <group 13>
+    <group 13> /= <group 13>
+    <group 13> %= <group 13>
+    <group 13> += <group 13>
+    <group 13> -= <group 13>
+    <group 13> <<= <group 13>
+    <group 13> >>= <group 13>
+    <group 13> &= <group 13>
+    <group 13> |= <group 13>
+    <group 13> ^= <group 13>
+    

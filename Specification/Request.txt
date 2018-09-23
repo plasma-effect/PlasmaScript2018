@@ -1,0 +1,22 @@
+function
+let
+tuple let
+
+for
+while
+break
+
+if-elif-else
+return
+tuple return
+
+coroutine
+yield_return
+yield_break
+
+int(std::int64_t)
+double(double)
+char(char)
+string(std::string)
+ref{T}(T&)
+const_ref{T}(T const&)
