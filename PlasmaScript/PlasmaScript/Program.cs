@@ -11,19 +11,17 @@ namespace PlasmaScript
     {
         static void Main(string[] args)
         {
-            var str = @"int sum(array<@T> ar)
-{
-    @T ret = 0;
-    for(auto a: ar)
-    {
-        ret = a;
-    }
-    return ret;
-}";
-            using (var stream = new Utility.ReplaceReader("@T", "int", new System.IO.StringReader(str)))
+            var line = ReadLine();
+            var lexer = new Lexer();
+            var parser = new Parser();
+            var lex = lexer.Analize(line);
+            var isend = lex.Count == 0;
+            foreach (var a in lex)
             {
-                WriteLine(stream.ReadToEnd());
+                WriteLine(a);
             }
+            WriteLine();
+            WriteLine(parser.ParseExpr(lex.GetArrayEnumerator(), ref isend));
         }
     }
 }

@@ -80,7 +80,7 @@ namespace PlasmaScript
                 var match = this.assignreg.Match(line, index, end - index);
                 if (match.Success)
                 {
-                    return Next(NewAssignOperator(match.Value.Substring(0, match.Value.Length - 1)), match, line, index, end, ret);
+                    return Next(NewAssignOperator(match.Value), match, line, index, end, ret);
                 }
             }
             {
@@ -120,6 +120,13 @@ namespace PlasmaScript
                     }
                 }
             }
+            {
+                var match = this.namereg.Match(line, index, end - index);
+                if (match.Success)
+                {
+                    return Next(NewName(match.Value), match, line, index, end, ret);
+                }
+            }
 
             if (line.Substring(index, end - index).All(c => c == ' '))
             {
@@ -127,7 +134,7 @@ namespace PlasmaScript
             }
             else
             {
-                throw new ArgumentException($"{index}不明なトークンが含まれています");
+                throw new ArgumentException($"{index} 不明なトークンが含まれています");
             }
         }
 

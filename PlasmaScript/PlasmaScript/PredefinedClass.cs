@@ -8,6 +8,21 @@ namespace PlasmaScript
 {
     namespace Predefined
     {
+        public class BasicValue<T>
+            where T:struct
+        {
+            public BasicValue(T value = default(T))
+            {
+                this.Value = value;
+            }
+
+            void Assign(T val)
+            {
+                this.Value = val;
+            }
+
+            T Value { get; set; }
+        }
         public class BITInt
         {
             long[] ar;
@@ -99,7 +114,7 @@ namespace PlasmaScript
                 }
             }
         }
-        public struct ModNum
+        public class ModNum
         {
             static ulong mod = 1000000007;
             

@@ -5,7 +5,8 @@ group 1
 group 2
     <group 1>.<name>
     <group 1>[<expression>]
-    <group 1>([<expression> *(, <expression>)])
+    <group 1>(*<expression>)
+    <group 1>{*<value type>}(*<expression>)
     ?(<expression>, <expression>, <expression>)
 group 3
     ++<group 2>

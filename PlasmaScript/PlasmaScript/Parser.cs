@@ -4,526 +4,500 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static ParsingTypes.LexerToken;
+using static PlasmaScript.Utility;
 using ParsingTypes;
 
 namespace PlasmaScript
 {
     public class Parser
     {
-        List<string>[] biop;
-        string[] monop;
+        string[][] leftbiop;//左結合二項演算子
+        string[] monop;//一項演算子
+        string[] typekeyword;//ref const const_ref
 
         public Parser()
         {
-            this.biop = new List<string>[10];
-            this.biop[9] = new List<string> { "||" };
-            this.biop[8] = new List<string> { "&&" };
-            this.biop[7] = new List<string> { "|" };
-            this.biop[6] = new List<string> { "^" };
-            this.biop[5] = new List<string> { "&" };
-            this.biop[4] = new List<string> { "==", "!=" };
-            this.biop[3] = new List<string> { "<=", ">=", "<", ">" };
-            this.biop[2] = new List<string> { "<<", ">>" };
-            this.biop[1] = new List<string> { "+", "-" };
-            this.biop[0] = new List<string> { "*", "/", "%" };
-            this.monop = new string[] { "~", "!", "+", "-", "++", "--" };
-        }
-
-        public Line Parsing(List<LexerToken> line)
-        {
-            if (line.Count == 0)
+            this.leftbiop = new string[][]
             {
-                return Line.None;
-            }
-            if (line[0] is Keyword keyword)
+                new string[]{"*","/","%"},
+                new string[]{"+","-"},
+                new string[]{">>","<<"},
+                new string[]{"<",">","<=",">="},
+                new string[]{"!=","=="},
+                new string[]{"&"},
+                new string[]{"^"},
+                new string[]{"|"},
+                new string[]{"&&"},
+                new string[]{"||"}
+            };
+            this.monop = new string[]
             {
-                var item = keyword.Item;
-                if (item == "function")
-                {
-                    return FunctionParse(line);
-                }
-                else if (item == "let")
-                {
-                    return LetParse(line);
-                }
-                else if (item == "for")
-                {
-                    return ForParse(line);
-                }
-                else if (item == "while")
-                {
-                    return WhileIfElifParse(line, Line.NewWhileStart);
-                }
-                else if (item == "if")
-                {
-                    return WhileIfElifParse(line, Line.NewIfStart);
-                }
-                else if (item == "elif")
-                {
-                    return WhileIfElifParse(line, Line.NewElifStart);
-                }
-                else if (item == "end")
-                {
-                    return Line.End;
-                }
-                else if (item == "else")
-                {
-                    return Line.Else;
-                }
-                else if (item == "break")
-                {
-                    return Line.Break;
-                }
-            }
-            var index = 0;
-            var expr = ExprParse(line, ref index);
-            if (index == line.Count)
+                "++","--","~","!","-","+"
+            };
+            this.typekeyword = new string[]
             {
-                return Line.NewExpression(expr);
-            }
-            if (line[index] is AssignOperator aop)
-            {
-                ++index;
-                return Line.NewValueAssign(aop.Item, expr, ExprParse(line, ref index));
-            }
-            throw new Exception("適切でない文です");
-        }
-
-        private Line FunctionParse(List<LexerToken> line)
-        {
-            if (line.Count < 4)
-            {
-                throw new ArgumentException($"構文が間違っています");
-            }
-            if (line[1] is LexerToken.Name n && line[2] == ParenthesisStart) 
-            {
-                var fname = n.Item;
-                var args = new List<Tuple<string, ParsingTypes.ValueType>>();
-                var index = 3;
-                var ret = ParsingTypes.ValueType.Void;
-                try
-                {
-                    while (true)
-                    {
-                        if (line[index] is LexerToken.Name a)
-                        {
-                            var name = a.Item;
-                            ++index;
-                            if (line[index] != TypeSig)
-                            {
-                                throw new ArgumentException($"型名を追加してください");
-                            }
-                            ++index;
-                            args.Add(Tuple.Create(name, TypeParse(line, ref index)));
-                            if (line[index] == ParenthesisEnd)
-                            {
-                                ++index;
-                                break;
-                            }
-                            else if (line[index] is Operator op && op.Item == ",")
-                            {
-                                ++index;
-                                continue;
-                            }
-                            else
-                            {
-                                throw new ArgumentException("不明なトークンが含まれています");
-                            }
-                        }
-                    }
-                    if (index != line.Count)
-                    {
-                        if (line[index] != TypeSig)
-                        {
-                            throw new ArgumentException("不明なトークンが含まれています");
-                        }
-                        ++index;
-                        ret = TypeParse(line, ref index);
-                        if (index != line.Count)
-                        {
-                            throw new ArgumentException("不明なトークンが含まれています");
-                        }
-                    }
-                    return Line.NewFunctionDefine(n.Item, args, ret);
-                }
-                catch (IndexOutOfRangeException)
-                {
-                    throw new ArgumentException("構文が間違っています");
-                }
-            }
-            else
-            {
-                throw new ArgumentException($"関数名ではありません");
-            }
-        }
-
-        private Line LetParse(List<LexerToken> line)
-        {
-            try
-            {
-                var val = new List<string>();
-                var index = 1;
-                if (line[index] == BracketStart)
-                {
-                    ++index;
-                    while (true)
-                    {
-                        if(line[index] is LexerToken.Name n)
-                        {
-                            ++index;
-                            val.Add(n.Item);
-                        }
-                        if(line[index] is Operator op && op.Item == ",")
-                        {
-                            ++index;
-                            continue;
-                        }
-                        else if (line[index] == ParenthesisEnd)
-                        {
-                            ++index;
-                            break;
-                        }
-                        else
-                        {
-                            throw new ArgumentException("変数定義が間違っています");
-                        }
-                    }
-                }
-                else if(line[index] is LexerToken.Name n)
-                {
-                    ++index;
-                    val.Add(n.Item);
-                }
-                if (val.Count == 0)
-                {
-                    throw new ArgumentException("変数定義が間違っています");
-                }
-                if(line[index] is AssignOperator ope && ope.Item == "")
-                {
-                    ++index;
-                    return Line.NewValueDefine(val, ExprParse(line, ref index));
-                }
-                throw new ArgumentException("異常な式です");
-            }
-            catch (IndexOutOfRangeException)
-            {
-                throw new ArgumentException("構文が間違っています");
-            }
-        }
-
-        private Line ForParse(List<LexerToken> line)
-        {
-            var index = 1;
-            if (line[index] == ParenthesisStart)
-            {
-                ++index;
-                var list = new List<string>();
-                if (line[index] == BracketStart)
-                {
-                    ++index;
-                    if (line[index] is LexerToken.Name n)
-                    {
-                        ++index;
-                        list.Add(n.Item);
-                    }
-                    else
-                    {
-                        throw new ArgumentException("変数が異常です");
-                    }
-                    while (true)
-                    {
-                        if (line[index] == BracketEnd)
-                        {
-                            ++index;
-                            break;
-                        }
-                        else if (line[index] is Operator op && op.Item == "," && line[index + 1] is LexerToken.Name name)
-                        {
-                            index += 2;
-                            list.Add(name.Item);
-                        }
-                        else
-                        {
-                            throw new ArgumentException("変数が異常です");
-                        }
-                    }
-                }
-                else if (line[index] is LexerToken.Name name)  
-                {
-                    ++index;
-                    list.Add(name.Item);
-                }
-                if (list.Count == 0)
-                {
-                    throw new ArgumentException("変数定義が異常です");
-                }
-                if (line[index] is Operator op2 && op2.Item == ",") 
-                {
-                    ++index;
-                    var ret = Line.NewForeachStart(list, ExprParse(line, ref index));
-                    if (line[index] == ParenthesisEnd) 
-                    {
-                        ++index;
-                        if (index != line.Count)
-                        {
-                            throw new ArgumentException("不要な文字列が後ろに含まれています");
-                        }
-                        return ret;
-                    }
-                }
-            }
-            throw new ArgumentException("変数定義が異常です");
-        }
-
-        private Line WhileIfElifParse(List<LexerToken> line, Func<Expr, Line> func)
-        {
-            var index = 1;
-            if(line[index] == ParenthesisStart)
-            {
-                ++index;
-                var expr = ExprParse(line, ref index);
-                if (line[index] == ParenthesisEnd)
-                {
-                    ++index;
-                    if (index != line.Count)
-                    {
-                        throw new ArgumentException("不要な文字列が後ろに含まれています");
-                    }
-                    return func(expr);
-                }
-            }
-            throw new ArgumentException("while文が異常です");
-        }
-
-        private ParsingTypes.ValueType TypeParse(List<LexerToken> line, ref int index)
-        {
-            if(line[index] is LexerToken.Name name)
-            {
-                ++index;
-                if (line[index] == CurlyStart)
-                {
-                    ++index;
-                    var list = new List<ParsingTypes.ValueType>();
-                    while (index != line.Count)
-                    {
-                        list.Add(TypeParse(line, ref index));
-                        if (line[index] == CurlyEnd)
-                        {
-                            ++index;
-                            break;
-                        }
-                        else if (line[index] is Operator op && op.Item == ",") 
-                        {
-                            ++index;
-                            continue;
-                        }
-                        else
-                        {
-                            throw new ArgumentException("型名として認識されません");
-                        }
-                    }
-                    return ParsingTypes.ValueType.NewTemplate(name.Item, list);
-                }
-                else
-                {
-                    return ParsingTypes.ValueType.NewAtomic(name.Item);
-                }
-            }
-            else
-            {
-                throw new ArgumentException("型名として認識されません");
-            }
+                "ref","const","const_ref"
+            };
         }
         
-        private Expr ExprParse(List<LexerToken> line, ref int index)
+        public ParsingTypes.ValueType ParseType(ArrayEnumerator<LexerToken> ts, ref bool isend)
         {
-            return BiOperatorParse(line, ref index);
-        }
-
-        private Expr BiOperatorParse(List<LexerToken> line, ref int index, int rank = 9)
-        {
-            if (rank == -1)
+            if (isend)
             {
-                return MonoOperatorParse(line, ref index);
+                throw MakeException("型名がありません");
             }
-            var expr = BiOperatorParse(line, ref index, rank - 1);
-            while (index != line.Count) 
+            var top = ts.GetNext(out isend);
+            if(top is Name n)
             {
-                if(line[index] is Operator op && this.biop[rank].Contains(op.Item))
+                var ret = ParseScopedName(ts, ref isend, ScopedName.NewAtomic(n.Item));
+                if (isend)
                 {
-                    ++index;
-                    expr = Expr.NewBiOperator(op.Item, expr, BiOperatorParse(line, ref index, rank - 1));
-                }
-                else
-                {
-                    break;
-                }
-            }
-            return expr;
-        }
-
-        private Expr MonoOperatorParse(List<LexerToken> line,ref int index)
-        {
-            if(line[index] is Operator op && this.monop.Contains(op.Item))
-            {
-                ++index;
-                return Expr.NewMonoOperator(op.Item, MonoOperatorParse(line, ref index));
-            }
-            return FunctionExprParse(line, ref index);
-        }
-
-        private Expr FunctionExprParse(List<LexerToken> line, ref int index)
-        {
-            if(line[index] is Operator op && op.Item == "?")
-            {
-                ++index;
-                return TriOperatorParse(line, ref index);
-            }
-            var expr = BaseParse(line, ref index);
-            while (index != line.Count)
-            {
-                if (line[index] is Operator op2 && op2.Item == "." && line[index + 1] is LexerToken.Name name) 
-                {
-                    index += 2;
-                    expr = Expr.NewMember(expr, name.Item);
-                }
-                else
-                {
-                    break;
-                }
-            }
-            while (index != line.Count)
-            {
-                if (line[index] == ParenthesisStart)
-                {
-                    ++index;
-                    var arg = new List<Expr>();
-                    if (line[index] == ParenthesisEnd)
+                    if (ret is ScopedName.Atomic b && this.typekeyword.Contains(b.Item)) 
                     {
-                        ++index;
+                        throw MakeException("型名に使えないキーワードが含まれています");
                     }
-                    else
+                    return ParsingTypes.ValueType.NewAtomic(ret);
+                }
+                var next = ts.GetNext(out isend);
+                if(next != CurlyStart)
+                {
+                    ts.MovePrev(out isend);
+                    return ParsingTypes.ValueType.NewAtomic(ret);
+                }
+                var list = new List<ParsingTypes.ValueType>();
+                while (!isend)
+                {
+                    list.Add(ParseType(ts, ref isend));
+                    if (isend)
                     {
-                        arg.Add(ExprParse(line, ref index));
-                        while (index != line.Count)
+                        throw MakeException("\"{\" が閉じられていません");
+                    }
+                    next = ts.GetNext(out isend);
+                    if (next == CurlyEnd)
+                    {
+                        if (ret is ScopedName.Atomic b && this.typekeyword.Contains(b.Item))
                         {
-                            if(line[index] == ParenthesisEnd)
+                            if (list.Count() != 1)
                             {
-                                ++index;
-                                break;
+                                throw MakeException("\"{  }\"内の型が多すぎます");
                             }
-                            else if(line[index] is Operator op3 && op3.Item == ",")
+                            if (b.Item =="ref")
                             {
-                                ++index;
-                                arg.Add(ExprParse(line, ref index));
+                                return ParsingTypes.ValueType.NewRef(list[0]);
                             }
-                            else
+                            else if (b.Item == "const")
                             {
-                                throw new ArgumentException("式が異常です");
+                                return ParsingTypes.ValueType.NewConst(list[0]);
+                            }
+                            else if (b.Item == "const_ref")
+                            {
+                                return ParsingTypes.ValueType.NewConstRef(list[0]);
                             }
                         }
+                        return ParsingTypes.ValueType.NewTemplate(ret, list);
                     }
-                    expr = Expr.NewFunction(expr, arg);
-                }
-                else if(line[index] == BracketStart)
-                {
-                    ++index;
-                    expr = Expr.NewIndexer(expr, ExprParse(line, ref index));
-                    if(line[index] == BracketEnd)
+                    else if(next is Operator op && op.Item == ",")
                     {
-                        ++index;
-                    }
-                    else
-                    {
-                        throw new ArgumentException("式が異常です");
-                    }
-                }
-                else
-                {
-                    break;
-                }
-            }
-            return expr;
-        }
-
-        private Expr TriOperatorParse(List<LexerToken> line,ref int index)
-        {
-            if(line[index] == ParenthesisStart)
-            {
-                ++index;
-                var cond = ExprParse(line, ref index);
-                if(line[index] is Operator op && op.Item == ",")
-                {
-                    ++index;
-                    var t = ExprParse(line, ref index);
-                    if(line[index]is Operator op2 && op2.Item == ",")
-                    {
-                        ++index;
-                        var f = ExprParse(line, ref index);
-                        if (line[index] == ParenthesisEnd)
-                        {
-                            ++index;
-                            return Expr.NewTriOperator(cond, t, f);
-                        }
-                    }
-                }
-            }
-            throw new ArgumentException("異常な式です");
-        }
-
-        private Expr BaseParse(List<LexerToken> line, ref int index)
-        {
-            if(line[index] == ParenthesisStart)
-            {
-                ++index;
-                var ret = ExprParse(line, ref index);
-                if (line[index] == ParenthesisEnd)
-                {
-                    ++index;
-                    return ret;
-                }
-            }
-            else if(line[index] is LexerToken.Name n)
-            {
-                ++index;
-                var name = ParsingTypes.Name.NewAtomic(n.Item);
-                while (index != line.Count)
-                {
-                    if (line[index] is Operator op && op.Item == "::" && line[index + 1] is LexerToken.Name next)
-                    {
-                        index += 2;
-                        name = ParsingTypes.Name.NewScope(name, next.Item);
                         continue;
                     }
                     else
                     {
-                        break;
+                        throw MakeException("不明なトークンが含まれています");
                     }
                 }
-                return Expr.NewValue(name);
+                throw MakeException("\"{\" が閉じられていません");
             }
-            else if(line[index] is Number num)
+            else if(top == BracketStart)
             {
-                ++index;
-                return Expr.NewNumLiteral(num.Item);
+                var list = new List<ParsingTypes.ValueType>();
+                while (true)
+                {
+                    list.Add(ParseType(ts, ref isend));
+                    if (isend)
+                    {
+                        throw MakeException("[ が閉じられていません");
+                    }
+                    top = ts.GetNext(out isend);
+                    if(IsComma(top))
+                    {
+                        continue;
+                    }
+                    else if (top == BracketEnd)
+                    {
+                        return ParsingTypes.ValueType.NewTuple(list);
+                    }
+                    else
+                    {
+                        throw MakeException("不明なトークンが含まれています");
+                    }
+                }
             }
-            else if(line[index] is LexerToken.Double dob)
-            {
-                ++index;
-                return Expr.NewDoubleLiteral(dob.Item);
-            }
-            else if(line[index] is LexerToken.Char ch)
-            {
-                ++index;
-                return Expr.NewCharLiteral(ch.Item);
-            }
-            else if(line[index] is LexerToken.String str)
-            {
-                ++index;
-                return Expr.NewStringLiteral(str.Item);
-            }
-            throw new ArgumentException("異常な式です");
+            throw MakeException("型名でないトークンです");
         }
-        
+
+        private ScopedName ParseScopedName(ArrayEnumerator<LexerToken> ts, ref bool isend, ScopedName ret)
+        {
+            if (isend)
+            {
+                return ret;
+            }
+            while (!isend)
+            {
+                var next = ts.GetNext(out isend);
+                if (next is Operator op && op.Item == "::")
+                {
+                    if (isend)
+                    {
+                        throw MakeException("名前として成立しません");
+                    }
+                    next = ts.GetNext(out isend);
+                    if (next is Name m)
+                    {
+                        ret = ScopedName.NewScope(ret, m.Item);
+                    }
+                    else
+                    {
+                        throw MakeException("型名として成立しません");
+                    }
+                }
+                else
+                {
+                    ts.MovePrev(out isend);
+                    break;
+                }
+            }
+            return ret;
+        }
+
+        public Expr ParseExpr(ArrayEnumerator<LexerToken> ts, ref bool isend)
+        {
+            return ParseRightBiop(ts, ref isend);
+        }
+
+        private Expr ParseRightBiop(ArrayEnumerator<LexerToken> ts, ref bool isend)
+        {
+            var left = ParseLeftBiop(ts, ref isend, this.leftbiop.Length - 1);
+            if (isend)
+            {
+                return left;
+            }
+            var top = ts.GetNext(out isend);
+            if(top is AssignOperator op)
+            {
+                if (isend)
+                {
+                    throw MakeException("式として成立しません");
+                }
+                return Expr.NewBiOperator(op.Item, left, ParseRightBiop(ts, ref isend));
+            }
+            else
+            {
+                ts.MovePrev(out isend);
+            }
+            return left;
+        }
+
+        private Expr ParseLeftBiop(ArrayEnumerator<LexerToken> ts, ref bool isend, int dep)
+        {
+            if (dep == -1)
+            {
+                return ParseMonop(ts, ref isend);
+            }
+            var ret = ParseLeftBiop(ts, ref isend, dep - 1);
+            while (true)
+            {
+                if (isend)
+                {
+                    return ret;
+                }
+                var top = ts.GetNext(out isend);
+                if(top is Operator op && this.leftbiop[dep].Contains(op.Item))
+                {
+                    if (isend)
+                    {
+                        throw MakeException("式として成立しません");
+                    }
+                    ret = Expr.NewBiOperator(op.Item, ret, ParseLeftBiop(ts, ref isend, dep - 1));
+                }
+                else
+                {
+                    ts.MovePrev(out isend);
+                    return ret;
+                }
+            }
+        }
+
+        private Expr ParseMonop(ArrayEnumerator<LexerToken> ts, ref bool isend)
+        {
+            if (isend)
+            {
+                throw MakeException("式として成立しません");
+            }
+            var top = ts.GetNext(out isend);
+            if (top is Operator op && this.monop.Contains(op.Item))
+            {
+                return Expr.NewMonoOperator(op.Item, ParseMonop(ts, ref isend));
+            }
+            ts.MovePrev(out isend);
+            return ParseFunction(ts, ref isend);
+        }
+
+        private Expr ParseFunction(ArrayEnumerator<LexerToken> ts, ref bool isend)
+        {
+            Expr ret;
+            var top = ts.GetNext(out isend);
+            if (top is Operator op && op.Item == "?")
+            {
+                top = ts.GetNext(out isend);
+                if (top == ParenthesisStart)
+                {
+                    var list = ParseFunctionCall(ts, out isend, out top);
+                    if (list.Count != 3)
+                    {
+                        throw MakeException("(  )の中の要素が3ではありません");
+                    }
+                    else
+                    {
+                        ret = Expr.NewTriOperator(list[0], list[1], list[2]);
+                    }
+                }
+                else
+                {
+                    throw MakeException("式として成立しません");
+                }
+            }
+            else
+            {
+                ts.MovePrev(out isend);
+                ret = ParseAtomic(ts, ref isend);
+            }
+            if (isend)
+            {
+                return ret;
+            }
+            while (true)
+            {
+                if (isend)
+                {
+                    break;
+                }
+                top = ts.GetNext(out isend);
+                
+                if(top == ParenthesisStart)
+                {
+                    ret = Expr.NewFunctionExpr(ret, ParseFunctionCall(ts, out isend, out top));
+                }
+                else if (top == BracketStart)
+                {
+                    top = ParseIndexCall(ts, ref isend, ref ret);
+                }
+                else
+                {
+                    ts.MovePrev(out isend);
+                    break;
+                }
+            }
+            return ret;
+        }
+
+        private LexerToken ParseIndexCall(ArrayEnumerator<LexerToken> ts, ref bool isend, ref Expr ret)
+        {
+            LexerToken top;
+            ret = Expr.NewIndexExpr(ret, ParseExpr(ts, ref isend));
+            if (isend)
+            {
+                throw MakeException("[ が閉じられていません");
+            }
+            top = ts.GetNext(out isend);
+            if (top != BracketEnd)
+            {
+                throw MakeException("[ が閉じられていません");
+            }
+
+            return top;
+        }
+
+        private List<Expr> ParseFunctionCall(ArrayEnumerator<LexerToken> ts, out bool isend, out LexerToken top)
+        {
+            var list = new List<Expr>();
+            top = ts.GetNext(out isend);
+            if (top != ParenthesisEnd)
+            {
+                ts.MovePrev(out isend);
+                while (true)
+                {
+                    list.Add(ParseExpr(ts, ref isend));
+                    if (isend)
+                    {
+                        throw MakeException("( が閉じられていません");
+                    }
+                    top = ts.GetNext(out isend);
+                    if (IsComma(top))
+                    {
+                        continue;
+                    }
+                    else if (top == ParenthesisEnd)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        throw MakeException("式として成立しません");
+                    }
+                }
+            }
+            return list;
+        }
+
+        private Expr ParseAtomic(ArrayEnumerator<LexerToken> ts, ref bool isend)
+        {
+            var top = ts.GetNext(out isend);
+            if (top == ParenthesisStart)
+            {
+                return ParseParenthesis(ts, ref isend, out top);
+            }
+            else if (top == BracketStart)
+            {
+                return ParseTupleExpr(ts, ref isend, out top);
+            }
+            else
+            {
+                switch (top)
+                {
+                    case Number num:
+                        return Expr.NewNumLiteral(num.Item);
+                    case LexerToken.Double db:
+                        return Expr.NewDoubleLiteral(db.Item);
+                    case LexerToken.String st:
+                        return Expr.NewStringLiteral(st.Item);
+                    case LexerToken.Char c:
+                        return Expr.NewCharLiteral(c.Item);
+                    case Name n:
+                        return Expr.NewNameExpr(ParseScopedName(ts, ref isend, ScopedName.NewAtomic(n.Item)));
+                }
+                throw MakeException("式として成立しません");
+            }
+        }
+
+        private Expr ParseTupleExpr(ArrayEnumerator<LexerToken> ts, ref bool isend, out LexerToken top)
+        {
+            var list = new List<Expr>();
+            while (true)
+            {
+                list.Add(ParseExpr(ts, ref isend));
+                top = ts.GetNext(out isend);
+                if (IsComma(top))
+                {
+                    continue;
+                }
+                else if (top == BracketEnd)
+                {
+                    return Expr.NewTupleExpr(list);
+                }
+                else
+                {
+                    throw MakeException("式として成立しません");
+                }
+            }
+        }
+
+        private Expr ParseParenthesis(ArrayEnumerator<LexerToken> ts, ref bool isend, out LexerToken top)
+        {
+            var ret = ParseExpr(ts, ref isend);
+            if (isend)
+            {
+                throw MakeException("( が閉じられていません");
+            }
+            top = ts.GetNext(out isend);
+            if (top != ParenthesisEnd)
+            {
+                throw MakeException("( が閉じられていません");
+            }
+            return ret;
+        }
+
+        private bool IsComma(LexerToken token)
+        {
+            return token is Operator op && op.Item == ",";
+        }
+
+        public Line ParseLine(ArrayEnumerator<LexerToken> ts, ref bool isend)
+        {
+            if (isend)
+            {
+                return Line.NoneLine;
+            }
+            var top = ts.GetNext(out isend);
+            if(top is Name n)
+            {
+                switch (n.Item)
+                {
+                    case "function":
+                        return ParseFunctionDefine(ts, ref isend);
+                    case "return":
+                        return ParseReturnAction(ts, ref isend);
+                }
+            }
+        }
+
+        private Line ParseFunctionDefine(ArrayEnumerator<LexerToken> ts, ref bool isend)
+        {
+
+        }
+
+        private Line ParseReturnAction(ArrayEnumerator<LexerToken> ts, ref bool isend)
+        {
+            var expr = ParseExpr(ts, ref isend);
+            if (!isend)
+            {
+                throw MakeException("余計な文字列が含まれています");
+            }
+            return Line.NewReturnAction(expr);
+        }
+
+        private Line ParseActionDefine(ArrayEnumerator<LexerToken> ts, ref bool isend)
+        {
+
+        }
+
+        private Line ParseValueDefine(ArrayEnumerator<LexerToken> ts, ref bool isend)
+        {
+
+        }
+
+        private Line ParseForDefine(ArrayEnumerator<LexerToken> ts, ref bool isend)
+        {
+
+        }
+
+        private Line ParseWhileDefine(ArrayEnumerator<LexerToken> ts, ref bool isend)
+        {
+
+        }
+    
+        private Line ParseIfDefine(ArrayEnumerator<LexerToken> ts, ref bool isend)
+        {
+
+        }
+
+        private Line ParseElifDefine(ArrayEnumerator<LexerToken> ts, ref bool isend)
+        {
+
+        }
+
+        private Line ParseCoroutineDefine(ArrayEnumerator<LexerToken> ts, ref bool isend)
+        {
+
+        }
+
+        private Line ParseCoroutineAction(ArrayEnumerator<LexerToken> ts, ref bool isend)
+        {
+
+        }
+
+        private Line ParseYieldReturn(ArrayEnumerator<LexerToken> ts,ref bool isend)
+        {
+
+        }
     }
 }
